@@ -16,6 +16,9 @@
 
 #include "ads1115.h"
 
+#define VOLTAGE_MODE 	(0)
+#define CURRENT_MODE	(1)
+#define BUILD_MODE		VOLTAGE_MODE
 #define	CONSUMER	"EXADC_Consumer"
 
 static char *gpio2 = "gpiochip2";
@@ -23,6 +26,10 @@ static char *gpio0 = "gpiochip0";
 static int addr_adc = 0x48;
 static char *i2cbus = "/dev/i2c-0";
 static int pinnums[4] = { 0, 14, 15, 16 };
+
+float readCurrent(int i) {
+	return (readVoltage(i) / 249.0f);
+}
 
 int main(void) {
 	int i, ret;
@@ -62,22 +69,29 @@ int main(void) {
 			ret = EXIT_FAILURE;
 			goto close_chip;
 		}
-		ret = gpiod_line_request_output(line[i], CONSUMER, 0);
+		ret = gpiod_line_request_output(line[i], CONSUMER, BUILD_MODE);
 		if (ret < 0) {
 			perror("request line as output failed.\n");
 			goto release_lines;
 		}
-		ret = gpiod_line_set_value(line[i], 0);
+		ret = gpiod_line_set_value(line[i], BUILD_MODE);
 		if (ret < 0) {
 			perror("set line output failed.\n");
 			goto release_lines;
 		}
 	}
 	ret = EXIT_SUCCESS;
-	printf("CH_0 = %.2f V | ", readVoltage(0));
-	printf("CH_1 = %.2f V | ", readVoltage(1));
-	printf("CH_2 = %.2f V | ", readVoltage(2));
-	printf("CH_3 = %.2f V \n", readVoltage(3));
+	#if  (BUILD_MODE == VOLTAGE_MODE)
+		printf("CH_0 = %.2f V | ", readVoltage(0));
+		printf("CH_1 = %.2f V | ", readVoltage(1));
+		printf("CH_2 = %.2f V | ", readVoltage(2));
+		printf("CH_3 = %.2f V \n", readVoltage(3));
+	#else
+		printf("CH_0 = %.2f mA | ", readCurrent(0));
+		printf("CH_1 = %.2f mA | ", readCurrent(1));
+		printf("CH_2 = %.2f mA | ", readCurrent(2));
+		printf("CH_3 = %.2f mA \n", readCurrent(3));
+	#endif
 
 release_lines:
 	for (i = 0; i < 4; i++)
