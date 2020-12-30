@@ -28,7 +28,7 @@ static char *i2cbus = "/dev/i2c-0";
 static int pinnums[4] = { 0, 14, 15, 16 };
 
 float readCurrent(int i) {
-	return (readVoltage(i) / 249.0f);
+	return (readVoltage(i) * 20.0f); // 20mA equal 1.0Voltage
 }
 
 int main(void) {
